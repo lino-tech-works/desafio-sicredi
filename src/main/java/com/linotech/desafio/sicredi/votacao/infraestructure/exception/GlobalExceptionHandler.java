@@ -6,6 +6,7 @@ import com.linotech.desafio.sicredi.votacao.infraestructure.presentation.dto.res
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class GlobalExceptionHandler {
 
     private static final String TIMESTAMP = "timestamp";
     private final MessageSource messageSource;
+    private final Clock clock;
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ProblemDetail> handleNotFound(NotFoundException exception, HttpServletRequest request) {
@@ -42,7 +44,7 @@ public class GlobalExceptionHandler {
 
         problemDetail.setTitle(HttpStatus.NOT_FOUND.getReasonPhrase());
         problemDetail.setInstance(URI.create(request.getRequestURI()));
-        problemDetail.setProperty(TIMESTAMP, OffsetDateTime.now());
+        problemDetail.setProperty(TIMESTAMP, OffsetDateTime.now(clock));
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
     }
@@ -63,7 +65,7 @@ public class GlobalExceptionHandler {
 
         problemDetail.setTitle(HttpStatus.BAD_REQUEST.getReasonPhrase());
         problemDetail.setInstance(URI.create(request.getRequestURI()));
-        problemDetail.setProperty(TIMESTAMP, OffsetDateTime.now());
+        problemDetail.setProperty(TIMESTAMP, OffsetDateTime.now(clock));
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
@@ -78,7 +80,7 @@ public class GlobalExceptionHandler {
 
         problemDetail.setTitle(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         problemDetail.setInstance(URI.create(request.getRequestURI()));
-        problemDetail.setProperty(TIMESTAMP, OffsetDateTime.now());
+        problemDetail.setProperty(TIMESTAMP, OffsetDateTime.now(clock));
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
     }
