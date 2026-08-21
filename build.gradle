@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.1.0'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'com.linotech.desafio.sicredi'
@@ -33,8 +34,10 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
 
 	compileOnly 'org.projectlombok:lombok'
+
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor',
 			"org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
 	// Lombok
@@ -57,10 +60,51 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy(tasks.named('jacocoTestReport'))
+	finalizedBy(tasks.named('jacocoTestCoverageVerification'))
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn(tasks.named('test'))
+
+	violationRules {
+		rule {
+			limit {
+				counter = 'INSTRUCTION'
+				value = 'COVEREDRATIO'
+				minimum = 0.75
+			}
+		}
+	}
+}
+
+tasks.named('jacocoTestReport') {
+	dependsOn(tasks.named('test'))
+
+	classDirectories.setFrom(files(classDirectories.files.collect {
+		fileTree(dir: it, exclude: [
+				'**/mapper/**',
+				'**/entity/**',
+				'**/exception/**',
+				'**/dto/request/**',
+				'**/dto/response/**',
+				'**/config/**',
+				'**/*Application*'
+		])
+	}))
+
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+}
+
+jacoco {
+	toolVersion = '0.8.13'
 }
 
 tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs << '-parameters'
 	options.compilerArgs << '-Amapstruct.defaultComponentModel=spring'
 }
-
