@@ -1,3 +1,9 @@
+logging.level:
+  root: error
+  sql: info
+  web: info
+  com.linotech.desafio.sicredi.votacao: INFO
+
 server:
   port: 8082
 
@@ -17,9 +23,33 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  threads:
+    virtual:
+      enabled: true
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
 
+client:
+  user-info:
+    base-url: ${USER_INFO_BASE_URL:http://localhost:8083}
+    connect-timeout: ${USER_INFO_CONNECT_TIMEOUT:2s}
+    read-timeout: ${USER_INFO_READ_TIMEOUT:3s}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      userInfo:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+        ignore-exceptions:
+          - com.linotech.desafio.sicredi.votacao.domain.exception.NotFoundException

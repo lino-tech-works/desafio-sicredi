@@ -1,23 +1,29 @@
 package com.linotech.desafio.sicredi.votacao.infraestructure.presentation.controller;
 
+import com.linotech.desafio.sicredi.votacao.application.RegistrarVotoService;
 import com.linotech.desafio.sicredi.votacao.application.VotoService;
 import com.linotech.desafio.sicredi.votacao.domain.ResultadoVotacao;
 import com.linotech.desafio.sicredi.votacao.domain.Voto;
 import com.linotech.desafio.sicredi.votacao.infraestructure.persistence.mapper.ResultadoVotacaoMapper;
 import com.linotech.desafio.sicredi.votacao.infraestructure.persistence.mapper.VotoMapper;
-import com.linotech.desafio.sicredi.votacao.infraestructure.presentation.dto.response.ResultadoVotacaoResponse;
 import com.linotech.desafio.sicredi.votacao.infraestructure.presentation.dto.request.VotoRequest;
+import com.linotech.desafio.sicredi.votacao.infraestructure.presentation.dto.response.ResultadoVotacaoResponse;
 import com.linotech.desafio.sicredi.votacao.infraestructure.presentation.dto.response.VotoResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @Tag(name = "Votos", description = "Registro de votos e consulta de resultados")
@@ -27,6 +33,7 @@ import java.util.UUID;
 public class VotoController {
 
     private final VotoService service;
+    private final RegistrarVotoService registrarVotoService;
     private final VotoMapper votoMapper;
     private final ResultadoVotacaoMapper resultadoVotacaoMapper;
 
@@ -40,7 +47,7 @@ public class VotoController {
                               @PathVariable UUID sessaoVotacaoId,
                               @Valid @RequestBody VotoRequest request) {
         log.info("m=votar, s=INIT, pautaId={}, sessaoVotacaoId={}", pautaId, sessaoVotacaoId);
-        Voto voto = service.votar(pautaId, sessaoVotacaoId, request.cpf(), request.tipo());
+        Voto voto = registrarVotoService.registrar(pautaId, sessaoVotacaoId, request.cpf(), request.tipo());
         return votoMapper.toResponse(voto);
     }
 

@@ -9,7 +9,7 @@ public class SessaoVotacao {
     private final Instant inicio;
     private final Instant fim;
 
-    private SessaoVotacao(UUID id, UUID pautaId, Instant inicio, Instant fim) {
+    public SessaoVotacao(UUID id, UUID pautaId, Instant inicio, Instant fim) {
         validar(pautaId, inicio, fim);
         this.id = id;
         this.pautaId = pautaId;

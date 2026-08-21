@@ -29,6 +29,7 @@ public class VotoRepositoryAdapter implements VotoRepository {
         return new ResultadoVotacao(pautaId, projection.getQuantidadeSim(), projection.getQuantidadeNao());
     }
 
+
     @Override
     public Voto salvar(Voto voto) {
         VotoEntity entity = mapper.toEntity(voto);

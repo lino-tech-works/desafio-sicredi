@@ -22,14 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class VotoService {
 
+    private final Clock clock;
+    private final VotoRepository votoRepository;
     private final PautaRepository pautaRepository;
     private final SessaoVotacaoRepository sessaoVotacaoRepository;
-    private final VotoRepository votoRepository;
-    private final Clock clock;
 
     @Transactional
     public Voto votar(UUID pautaId, UUID sessaoVotacaoId, String cpf, TipoVoto tipo) {
-        log.info("Registrando voto. pautaId={}, sessaoVotacaoId={}, tipo={}", pautaId, sessaoVotacaoId, tipo);
+        log.info("m=votar, s=STARTED, pautaId={}, sessaoVotacaoId={}, tipo={}", pautaId, sessaoVotacaoId, tipo);
 
         pautaRepository.findById(pautaId).orElseThrow(() -> new NotFoundException("pauta.nao-encontrada"));
 
@@ -53,7 +53,7 @@ public class VotoService {
         Voto voto = Voto.registrar(pautaId, sessaoVotacaoId, cpf, tipo, agora);
 
         Voto salvo = votoRepository.salvar(voto);
-        log.info("Voto registrado com sucesso. id={}, pautaId={}, sessaoVotacaoId={}, tipo={}", salvo.id(), pautaId, sessaoVotacaoId, tipo);
+        log.info("m=votar, s=COMPLETED, votoId={}, pautaId={}, sessaoVotacaoId={}, tipo={}", salvo.id(), pautaId, sessaoVotacaoId, tipo);
         return salvo;
     }
 

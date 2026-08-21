@@ -52,7 +52,7 @@ class VotoServiceTest {
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-08-20T10:00:00Z"), ZoneOffset.UTC);
 
-        service = new VotoService(pautaRepository, sessaoVotacaoRepository, votoRepository, clock);
+        service = new VotoService(clock,votoRepository,  pautaRepository, sessaoVotacaoRepository);
     }
 
     @Test

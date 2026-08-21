@@ -1,5 +1,6 @@
 package com.linotech.desafio.sicredi.votacao.infraestructure.presentation.controller;
 
+import com.linotech.desafio.sicredi.votacao.application.RegistrarVotoService;
 import com.linotech.desafio.sicredi.votacao.application.VotoService;
 import com.linotech.desafio.sicredi.votacao.domain.ResultadoVotacao;
 import com.linotech.desafio.sicredi.votacao.domain.TipoVoto;
@@ -50,6 +51,9 @@ class VotoControllerTest {
     private VotoService service;
 
     @MockitoBean
+    private RegistrarVotoService registrarVotoService;
+
+    @MockitoBean
     private VotoMapper votoMapper;
 
     @MockitoBean
@@ -61,7 +65,7 @@ class VotoControllerTest {
 
         Voto voto = Voto.registrar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo(), Instant.parse("2026-08-20T10:00:00Z"));
 
-        when(service.votar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo())).thenReturn(voto);
+        when(registrarVotoService.registrar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo())).thenReturn(voto);
         when(votoMapper.toResponse(voto)).thenReturn(
                 new VotoResponse(voto.id(), voto.pautaId(), voto.sessaoVotacaoId(), "***.456.789-**", voto.tipo(), voto.criadoEm())
         );
@@ -82,7 +86,7 @@ class VotoControllerTest {
         .andExpect(jsonPath("$.cpf").value("***.456.789-**"))
         .andExpect(jsonPath("$.tipo").value("SIM"));
 
-        verify(service).votar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo());
+        verify(registrarVotoService).registrar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo());
     }
 
     @Test
@@ -120,7 +124,7 @@ class VotoControllerTest {
         )
         .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(service);
+        verifyNoInteractions(registrarVotoService);
     }
 
     @Test
@@ -140,7 +144,7 @@ class VotoControllerTest {
     void deveRetornarBadRequestQuandoVotoForDuplicado() throws Exception {
         VotoRequest request = new VotoRequest("12345678900", TipoVoto.SIM);
 
-        when(service.votar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo())).thenThrow(new BusinessException("voto.duplicado"));
+        when(registrarVotoService.registrar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo())).thenThrow(new BusinessException("voto.duplicado"));
 
         mockMvc.perform(
                 post("/pautas/{pautaId}/sessao/{sessaoVotacaoId}/votos",
@@ -152,14 +156,14 @@ class VotoControllerTest {
         )
         .andExpect(status().isBadRequest());
 
-        verify(service).votar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo());
+        verify(registrarVotoService).registrar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo());
     }
 
     @Test
     void deveRetornarBadRequestQuandoSessaoEstiverFechada() throws Exception {
         VotoRequest request = new VotoRequest("12345678900", TipoVoto.SIM);
 
-        when(service.votar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo())).thenThrow(new BusinessException("sessao.fechada"));
+        when(registrarVotoService.registrar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo())).thenThrow(new BusinessException("sessao.fechada"));
 
         mockMvc.perform(
                 post("/pautas/{pautaId}/sessao/{sessaoVotacaoId}/votos",
@@ -171,6 +175,6 @@ class VotoControllerTest {
         )
         .andExpect(status().isBadRequest());
 
-        verify(service).votar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo());
+        verify(registrarVotoService).registrar(PAUTA_ID, SESSAO_VOTACAO_ID, request.cpf(), request.tipo());
     }
 }

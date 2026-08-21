@@ -34,23 +34,24 @@ Esta API oferece os recursos necessários para:
 
 ## 🛠️ Tecnologias
 
-| Tecnologia | Versão | Finalidade |
-|---|---|---|
-| Java | 21 | Linguagem principal |
-| Spring Boot | 4.1.0 | Framework base |
-| Spring Data JPA | — | Persistência de dados |
-| Spring Validation | — | Validação de entrada |
-| PostgreSQL | 16 | Banco de dados relacional |
-| Hibernate | — | ORM / DDL automático |
-| MapStruct | 1.6.3 | Mapeamento entre camadas |
-| Lombok | 1.18.30 | Redução de boilerplate |
-| SpringDoc OpenAPI | 2.8.9 | Documentação Swagger |
-| JUnit 5 + Mockito | — | Testes unitários e de integração |
-| H2 (test) | — | Banco em memória para testes |
-| JaCoCo | 0.8.13 | Cobertura de testes |
-| SonarQube | Community | Análise estática e qualidade de código |
-| Docker + Docker Compose | — | Infraestrutura local |
-| Gradle | 9.x | Build e gerenciamento de dependências |
+| Tecnologia              | Versão    | Finalidade |
+|-------------------------|-----------|---|
+| Java                    | 21        | Linguagem principal |
+| Spring Boot             | 4.1.0     | Framework base |
+| Spring Data JPA         | —         | Persistência de dados |
+| Spring Validation       | —         | Validação de entrada |
+| PostgreSQL              | 16        | Banco de dados relacional |
+| Hibernate               | —         | ORM / DDL automático |
+| MapStruct               | 1.6.3     | Mapeamento entre camadas |
+| Lombok                  | 1.18.30   | Redução de boilerplate |
+| SpringDoc OpenAPI       | 2.8.9     | Documentação Swagger |
+| JUnit 5 + Mockito       | —         | Testes unitários e de integração |
+| H2 (test)               | —         | Banco em memória para testes |
+| JaCoCo                  | 0.8.13    | Cobertura de testes |
+| SonarQube               | Community | Análise estática e qualidade de código |
+| Docker + Docker Compose | —         | Infraestrutura local |
+| Gradle                  | 9.x       | Build e gerenciamento de dependências |
+| WireMock                | —         | Mock de serviços externos para testes |
 
 ---
 
@@ -296,6 +297,103 @@ Essas mesmas exclusões são configuradas no SonarQube para manter a métrica de
 A cobertura mínima configurada no build é de **75%**.
 
 > **Importante:** nenhum token ou credencial do SonarQube é armazenado no repositório. Cada ambiente deve utilizar seu próprio token através da variável `SONAR_TOKEN`.
+
+---
+
+## 🧪 Mock local de elegibilidade
+
+A aplicação possui uma integração com um serviço externo responsável por verificar se o associado está apto a votar.
+
+Como o serviço originalmente especificado no desafio (`https://user-info.herokuapp.com/users/{cpf}`) não está disponível de forma confiável, o projeto disponibiliza um **mock local com WireMock**, executado pelo Docker Compose.
+
+Isso permite que o avaliador execute e valide o fluxo completo sem depender de um serviço externo.
+
+### 1. Subir o mock
+
+O mock é iniciado automaticamente junto com a infraestrutura:
+
+```bash
+docker compose up -d
+```
+
+O serviço ficará disponível em:
+
+```text
+http://localhost:8083
+```
+
+A aplicação já possui essa URL como valor padrão da configuração:
+
+```yaml
+client:
+  user-info:
+    base-url: ${USER_INFO_BASE_URL:http://localhost:8083}
+```
+
+Portanto, para executar localmente, **não é necessário configurar nenhuma variável adicional**.
+
+Caso queira utilizar outro serviço de elegibilidade, basta sobrescrever:
+
+```bash
+export USER_INFO_BASE_URL=http://host:porta
+```
+
+### 2. CPFs utilizados nos testes
+
+O mock local possui respostas determinísticas para os CPFs definidos nos mappings do projeto.
+
+> **Importante:** utilize os CPFs definidos nos arquivos de mapping do WireMock para reproduzir exatamente os cenários de `ABLE_TO_VOTE`, `UNABLE_TO_VOTE` e `404 Not Found`. Não é necessário utilizar um gerador de CPF para os cenários do mock.
+
+A tabela abaixo deve ser usada como referência para os cenários disponibilizados pelo mock:
+
+| Cenário | CPF | Resultado esperado |
+|---|---|---|
+| Associado elegível | `34873677882` | `ABLE_TO_VOTE` |
+| Associado não elegível | **CPF configurado no mapping `UNABLE_TO_VOTE`** | `UNABLE_TO_VOTE` |
+| CPF não encontrado | Qualquer CPF não configurado no mock | `404 Not Found` |
+
+> O CPF `34873677882` é o CPF utilizado no fluxo de teste de associado elegível. Para o cenário de `UNABLE_TO_VOTE`, utilize o CPF definido no respectivo mapping do WireMock.
+
+### 3. Cenários de negócio
+
+O fluxo de votação utiliza o resultado do serviço de elegibilidade antes de persistir o voto:
+
+```text
+CPF
+ │
+ ▼
+Serviço de elegibilidade
+ │
+ ├── ABLE_TO_VOTE ──────► continua o fluxo e registra o voto
+ │
+ ├── UNABLE_TO_VOTE ────► rejeita o voto
+ │
+ └── 404 Not Found ─────► CPF não encontrado
+```
+
+Além disso, a integração possui **Circuit Breaker com Resilience4j**. Caso o serviço de elegibilidade esteja indisponível ou apresente falhas compatíveis com a política configurada, a aplicação utiliza o fallback e retorna a mensagem de serviço indisponível.
+
+### 4. Testando diretamente o mock
+
+Para consultar o mock diretamente:
+
+```bash
+curl http://localhost:8083/users/34873677882
+```
+
+Para testar um CPF não configurado:
+
+```bash
+curl http://localhost:8083/users/11111111111
+```
+
+O segundo caso deve resultar em `404 Not Found`, permitindo validar o tratamento de CPF inexistente.
+
+## 📡 Endpoints e cURLs
+
+> **Base URL:** `http://localhost:8082`  
+> **Content-Type:** `application/json`  
+> **Accept:** `application/vnd.votacao.v1+json`
 
 ---
 

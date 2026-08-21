@@ -36,6 +36,15 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
 
+  user-info-mock:
+    image: wiremock/wiremock:latest
+    container_name: votacao-user-info-mock
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    volumes:
+      - ./docker/user-info-mock/mappings:/home/wiremock/mappings:ro
+
 volumes:
   postgres_data:
   sonarqube_data:
