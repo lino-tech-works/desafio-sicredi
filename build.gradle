@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '4.1.0'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
+	id 'org.sonarqube' version '7.4.0.8496'
 }
 
 group = 'com.linotech.desafio.sicredi'
@@ -30,7 +31,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
 
-	// Swagger / OpenAPI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
 
 	compileOnly 'org.projectlombok:lombok'
@@ -40,7 +40,6 @@ dependencies {
 
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
-	// Lombok
 	['annotationProcessor', 'compileOnly', 'testAnnotationProcessor', 'testCompileOnly']
 			.each {
 				conf -> add(conf, "org.projectlombok:lombok:${lombokVersion}")
@@ -54,7 +53,6 @@ dependencies {
 	testImplementation 'org.mockito:mockito-core'
 	testRuntimeOnly 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
 	testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
 }
 
@@ -107,4 +105,31 @@ jacoco {
 tasks.withType(JavaCompile).configureEach {
 	options.compilerArgs << '-parameters'
 	options.compilerArgs << '-Amapstruct.defaultComponentModel=spring'
+}
+
+/*
+ * SonarQube
+ */
+sonar {
+	properties {
+		property 'sonar.projectKey', 'votacao'
+		property 'sonar.projectName', 'Votacao'
+		property 'sonar.host.url', 'http://localhost:9000'
+		property 'sonar.coverage.jacoco.xmlReportPaths',
+				"${layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml"
+		property 'sonar.coverage.exclusions', '''
+			**/mapper/**,
+			**/entity/**,
+			**/exception/**,
+			**/dto/request/**,
+			**/dto/response/**,
+			**/config/**,
+			**/*Application.java
+		'''
+	}
+}
+
+tasks.named('sonar') {
+	dependsOn(tasks.named('test'))
+	dependsOn(tasks.named('jacocoTestReport'))
 }
