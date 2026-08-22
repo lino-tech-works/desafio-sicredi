@@ -11,6 +11,7 @@ API REST para gerenciamento de sessões de votação em assembleias de cooperati
 - [Arquitetura](#-arquitetura)
 - [Pré-requisitos](#-pré-requisitos)
 - [Como executar](#-como-executar)
+- [Análise de qualidade com SonarQube](#-análise-de-qualidade-com-sonarqube)
 - [Endpoints e cURLs](#-endpoints-e-curls)
 - [Documentação Swagger](#-documentação-swagger)
 - [Regras de negócio](#-regras-de-negócio)
@@ -20,7 +21,8 @@ API REST para gerenciamento de sessões de votação em assembleias de cooperati
 
 ## 🎯 Propósito
 
-No cooperativismo, cada associado possui um voto e as decisões são tomadas em assembleias por votação.  
+No cooperativismo, cada associado possui um voto e as decisões são tomadas em assembleias por votação.
+
 Esta API oferece os recursos necessários para:
 
 - **Cadastrar pautas** a serem votadas
@@ -32,21 +34,23 @@ Esta API oferece os recursos necessários para:
 
 ## 🛠️ Tecnologias
 
-| Tecnologia             | Versão   | Finalidade                          |
-|------------------------|----------|-------------------------------------|
-| Java                   | 21       | Linguagem principal                 |
-| Spring Boot            | 4.1.0    | Framework base                      |
-| Spring Data JPA        | —        | Persistência de dados               |
-| Spring Validation      | —        | Validação de entrada                |
-| PostgreSQL             | 16       | Banco de dados relacional           |
-| Hibernate              | —        | ORM / DDL automático                |
-| MapStruct              | 1.6.3    | Mapeamento entre camadas            |
-| Lombok                 | 1.18.30  | Redução de boilerplate              |
-| SpringDoc OpenAPI      | 2.8.9    | Documentação Swagger                |
-| JUnit 5 + Mockito      | —        | Testes unitários e de integração    |
-| H2 (test)              | —        | Banco em memória para testes        |
-| Docker + Docker Compose| —        | Infraestrutura local                |
-| Gradle                 | 9.x      | Build e gerenciamento de dependências |
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| Java | 21 | Linguagem principal |
+| Spring Boot | 4.1.0 | Framework base |
+| Spring Data JPA | — | Persistência de dados |
+| Spring Validation | — | Validação de entrada |
+| PostgreSQL | 16 | Banco de dados relacional |
+| Hibernate | — | ORM / DDL automático |
+| MapStruct | 1.6.3 | Mapeamento entre camadas |
+| Lombok | 1.18.30 | Redução de boilerplate |
+| SpringDoc OpenAPI | 2.8.9 | Documentação Swagger |
+| JUnit 5 + Mockito | — | Testes unitários e de integração |
+| H2 (test) | — | Banco em memória para testes |
+| JaCoCo | 0.8.13 | Cobertura de testes |
+| SonarQube | Community | Análise estática e qualidade de código |
+| Docker + Docker Compose | — | Infraestrutura local |
+| Gradle | 9.x | Build e gerenciamento de dependências |
 
 ---
 
@@ -54,7 +58,7 @@ Esta API oferece os recursos necessários para:
 
 O projeto segue inspiração em **Arquitetura Clean e Onion**, organizada em camadas:
 
-```
+```text
 src/main/java/.../votacao/
 ├── domain/                         # Entidades e regras de negócio puras
 │   ├── Pauta.java
@@ -92,6 +96,8 @@ src/main/java/.../votacao/
 - **Docker** e **Docker Compose** instalados
 - **Git** instalado
 
+> O projeto utiliza o **Gradle Wrapper** (`./gradlew`), portanto não é necessário instalar o Gradle manualmente.
+
 ---
 
 ## 🚀 Como executar
@@ -103,16 +109,34 @@ git clone git@github.com:lino-tech-works/desafio-sicredi.git
 cd desafio-sicredi
 ```
 
-### 2. Suba o banco de dados com Docker
+### 2. Suba a infraestrutura com Docker
 
 ```bash
 docker compose up -d
 ```
 
-> Isso iniciará um container PostgreSQL 16 na porta `5432` com:
-> - **Database:** `votacao-db`
-> - **Usuário:** `postgres`
-> - **Senha:** `123`
+O Docker Compose iniciará:
+
+- **PostgreSQL 16** na porta `5432`
+- **SonarQube Community** na porta `9000`
+
+O PostgreSQL é utilizado pela aplicação e também pelo SonarQube, em bancos separados.
+
+Para a aplicação:
+
+- **Database:** `votacao-db`
+- **Usuário:** `postgres`
+- **Senha:** `123`
+
+Para o SonarQube:
+
+- **Database:** `sonarqube`
+- **Usuário:** `sonar`
+- **Senha:** `sonar`
+
+Após a inicialização, o SonarQube estará disponível em:
+
+**http://localhost:9000**
 
 ### 3. Execute a aplicação
 
@@ -120,13 +144,15 @@ docker compose up -d
 ./gradlew bootRun
 ```
 
-A API estará disponível em: **http://localhost:8082**
+A API estará disponível em:
+
+**http://localhost:8082**
 
 ---
 
-### ▶️ Variáveis de ambiente (opcional)
+### ▶️ Variáveis de ambiente da aplicação (opcional)
 
-Caso queira apontar para um banco diferente, configure as variáveis:
+Caso queira apontar para um banco diferente, configure:
 
 ```bash
 export DB_HOST=localhost
@@ -135,6 +161,141 @@ export DB_NAME=votacao-db
 export DB_USERNAME=postgres
 export DB_PASSWORD=123
 ```
+
+---
+
+## 📊 Análise de qualidade com SonarQube
+
+O projeto possui integração com **SonarQube** para análise estática do código, identificação de bugs, vulnerabilidades, code smells, duplicações e cobertura de testes.
+
+O SonarQube é executado localmente através do Docker Compose.
+
+### 1. Acessar o SonarQube
+
+Com a infraestrutura iniciada:
+
+```bash
+docker compose up -d
+```
+
+acesse:
+
+**http://localhost:9000**
+
+Na primeira utilização, o login padrão é:
+
+```text
+Usuário: admin
+Senha: admin
+```
+
+O SonarQube solicitará a alteração da senha no primeiro acesso.
+
+> Se o ambiente já tiver sido inicializado anteriormente, utilize as credenciais definidas nessa instância.
+
+---
+
+### 2. Criar o projeto no SonarQube
+
+Na interface do SonarQube:
+
+1. Acesse **Projects**
+2. Selecione **Create Project**
+3. Escolha **Create a local project**
+4. Informe:
+
+```text
+Project display name: Votacao
+Project key: votacao
+```
+
+5. Em **Analysis Method**, selecione **Locally**.
+
+---
+
+### 3. Criar o token de análise
+
+Crie um **User Token** no SonarQube através de:
+
+**My Account → Security → Generate Token**
+
+Sugestão de nome:
+
+```text
+votacao-local
+```
+
+O token deve ser criado pelo próprio avaliador na instância local do SonarQube.
+
+> ⚠️ **Importante:** o token é uma credencial pessoal e **não deve ser commitado no Git**.
+
+---
+
+### 4. Configurar o token no ambiente
+
+No Linux/macOS:
+
+```bash
+export SONAR_TOKEN="SEU_TOKEN"
+```
+
+Para verificar se a variável está configurada sem exibir o token:
+
+```bash
+printenv SONAR_TOKEN >/dev/null && echo "SONAR_TOKEN configurado"
+```
+
+No Windows PowerShell:
+
+```powershell
+$env:SONAR_TOKEN="SEU_TOKEN"
+```
+
+---
+
+### 5. Executar a análise
+
+Execute:
+
+```bash
+./gradlew clean test jacocoTestReport sonar
+```
+
+O comando irá:
+
+1. limpar os artefatos anteriores;
+2. executar os testes;
+3. gerar o relatório de cobertura do JaCoCo;
+4. executar a análise do SonarQube;
+5. enviar os resultados para a instância local do SonarQube.
+
+Após a execução, acesse:
+
+**http://localhost:9000**
+
+e selecione o projeto **Votacao**.
+
+---
+
+### 6. Cobertura de testes
+
+O projeto utiliza **JaCoCo** para geração do relatório de cobertura.
+
+Alguns componentes de infraestrutura não são considerados no cálculo da cobertura:
+
+- entidades JPA;
+- mappers;
+- DTOs de request;
+- DTOs de response;
+- configurações;
+- exceções;
+- classe principal da aplicação.
+
+Essas mesmas exclusões são configuradas no SonarQube para manter a métrica de cobertura consistente entre JaCoCo e SonarQube.
+
+A cobertura mínima configurada no build é de **75%**.
+
+> **Importante:** nenhum token ou credencial do SonarQube é armazenado no repositório. Cada ambiente deve utilizar seu próprio token através da variável `SONAR_TOKEN`.
 
 ---
 
@@ -162,6 +323,7 @@ curl -X POST http://localhost:8082/pautas \
 ```
 
 **Resposta `201 Created`:**
+
 ```json
 {
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -178,6 +340,7 @@ curl -X POST http://localhost:8082/pautas \
 Abre uma sessão de votação para uma pauta. O campo `duracaoEmMinutos` é **opcional** — se omitido, a sessão dura **1 minuto**.
 
 **Com duração personalizada:**
+
 ```bash
 curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/sessao \
   -H "Content-Type: application/json" \
@@ -188,12 +351,14 @@ curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/s
 ```
 
 **Com duração padrão (1 minuto) — sem body:**
+
 ```bash
 curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/sessao \
   -H "Accept: application/vnd.votacao.v1+json"
 ```
 
 **Resposta `201 Created`:**
+
 ```json
 {
   "id": "f1e2d3c4-b5a6-7890-fedc-ba9876543210",
@@ -212,6 +377,7 @@ curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/s
 Registra o voto de um associado. Cada CPF pode votar **apenas uma vez** por pauta, e a sessão precisa estar **aberta**.
 
 **Voto SIM:**
+
 ```bash
 curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/sessao/f1e2d3c4-b5a6-7890-fedc-ba9876543210/votos \
   -H "Content-Type: application/json" \
@@ -223,6 +389,7 @@ curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/s
 ```
 
 **Voto NÃO:**
+
 ```bash
 curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/sessao/f1e2d3c4-b5a6-7890-fedc-ba9876543210/votos \
   -H "Content-Type: application/json" \
@@ -234,6 +401,7 @@ curl -X POST http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/s
 ```
 
 **Resposta `201 Created`:**
+
 ```json
 {
   "id": "11223344-5566-7788-99aa-bbccddeeff00",
@@ -259,6 +427,7 @@ curl -X GET http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/re
 ```
 
 **Resposta `200 OK`:**
+
 ```json
 {
   "pautaId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -272,12 +441,13 @@ curl -X GET http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/re
 ### ⚠️ Respostas de erro
 
 | Código | Situação |
-|--------|----------|
-| `400`  | Dados de entrada inválidos, sessão fechada, voto duplicado ou duração inválida |
-| `404`  | Pauta ou sessão não encontrada |
-| `500`  | Erro interno inesperado |
+|---|---|
+| `400` | Dados de entrada inválidos, sessão fechada, voto duplicado ou duração inválida |
+| `404` | Pauta ou sessão não encontrada |
+| `500` | Erro interno inesperado |
 
 **Exemplo de erro `400` (sessão fechada):**
+
 ```json
 {
   "type": "about:blank",
@@ -294,8 +464,8 @@ curl -X GET http://localhost:8082/pautas/a1b2c3d4-e5f6-7890-abcd-ef1234567890/re
 
 Com a aplicação em execução, acesse a documentação interativa:
 
-- **Swagger UI:** [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html)
-- **OpenAPI JSON:** [http://localhost:8082/v3/api-docs](http://localhost:8082/v3/api-docs)
+- **Swagger UI:** http://localhost:8082/swagger-ui.html
+- **OpenAPI JSON:** http://localhost:8082/v3/api-docs
 
 ---
 
@@ -313,25 +483,43 @@ Com a aplicação em execução, acesse a documentação interativa:
 
 ## 🧪 Executando os testes
 
+Para executar todos os testes:
+
 ```bash
 ./gradlew test
 ```
 
-Os testes incluem:
-- **Testes unitários** de domínio e serviços (com Mockito)
-- **Testes de integração** de repositórios (com H2 em memória)
-- **Testes de controller** (com MockMvc + @WebMvcTest)
+O projeto possui:
 
-Para ver o relatório de testes:
+- **Testes unitários** de domínio e serviços, utilizando Mockito
+- **Testes de integração** dos repositórios, utilizando H2 em memória
+- **Testes de controller**, utilizando MockMvc e `@WebMvcTest`
+
+### Cobertura com JaCoCo
+
+Para executar os testes e gerar o relatório de cobertura:
+
 ```bash
-# O relatório HTML é gerado em:
-open build/reports/tests/test/index.html
+./gradlew test jacocoTestReport
 ```
+
+Os relatórios são gerados em:
+
+```text
+build/reports/jacoco/test/
+```
+
+O relatório HTML pode ser acessado em:
+
+```text
+build/reports/jacoco/test/html/index.html
+```
+
+A cobertura mínima configurada no build é de **75%**.
 
 ---
 
 ## 👤 Autor
 
 **Lino Tech Works - GusttaDev**  
-GitHub: [@lino-tech-works](https://github.com/lino-tech-works)
-
+GitHub: https://github.com/lino-tech-works
